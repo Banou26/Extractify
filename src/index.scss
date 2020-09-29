@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat|Roboto&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+
+  font-family: Montserrat;
+}
+
+html {
+  font-size: 62.5%;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  font-size: 1.6rem;
+  font-family: Fira Sans;
+  background-color: #0f0f0f;
+  color: #fff;
+  // font-family: "Segoe UI", Roboto, "Fira Sans",  "Helvetica Neue", Arial, sans-serif;
+}
+
+body > div {
+  height: 100%;
+  width: 100%;
+}
+
+a {
+  color: #777777;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+ul {
+  list-style: none;
+}
+
+h1 {
+  position: absolute;
+  top: 5rem;
+  left: 5rem;
+  user-select: none;
+}
+
+.home {
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .drop-zone {
+    position: relative;
+    height: 35rem;
+    width: 50rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px dashed #fff;
+    border-radius: 2rem;
+
+    &:active, &.drag-hover {
+      transition: background-color ease-out 200ms;
+      background-color: rgb(77, 77, 77);
+    }
+
+    input {
+      position: absolute;
+      top: 0;
+      left: 0;
+
+      height: 100%;
+      width: 100%;
+
+      opacity: 0;
+      border-radius: inherit;
+      cursor: pointer;
+    }
+  }
+
+  .pdf-text {
+    height: 50rem;
+    width: 40rem;
+    overflow: auto;
+  }
+}
