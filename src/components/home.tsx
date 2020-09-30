@@ -1,65 +1,19 @@
 /** @jsx h */
 import { h } from 'preact'
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { Download } from 'react-feather'
-import { getPDF } from '../utils'
-import { Util } from 'pdfjs-dist'
-import pdf from 'url:../../res/pdf1.pdf'
-import * as tesseract from 'tesseract.js'
+import * as PDFJs from 'pdfjs-dist'
+import { set, get } from 'idb-keyval'
 
-var PDF_PATH = "../../web/compressed.tracemonkey-pldi-09.pdf";
-var PAGE_NUMBER = 11;
-var PAGE_SCALE = 1;
-var SVG_NS = "http://www.w3.org/2000/svg";
+import PDFViewer from './pdf-viewer'
 
-function buildSVG(viewport, textContent) {
-  // Building SVG with size of the viewport (for simplicity)
-  var svg = document.createElementNS(SVG_NS, "svg:svg");
-  svg.setAttribute("width", viewport.width + "px");
-  svg.setAttribute("height", viewport.height + "px");
-  // items are transformed to have 1px font size
-  svg.setAttribute("font-size", 1);
+PDFJs.GlobalWorkerOptions.workerSrc = 'http://localhost:1234/pdfjs-build/pdf.worker.js'
 
-  // processing all items
-  textContent.items.forEach(function (textItem) {
-    // we have to take in account viewport transform, which includes scale,
-    // rotation and Y-axis flip, and not forgetting to flip text.
-    var tx = Util.transform(
-      Util.transform(viewport.transform, textItem.transform),
-      [1, 0, 0, -1, 0, 0]
-    );
-    var style = textContent.styles[textItem.fontName];
-    // adding text element
-    var text = document.createElementNS(SVG_NS, "svg:text");
-    text.setAttribute("transform", "matrix(" + tx.join(" ") + ")");
-    text.setAttribute("font-family", style.fontFamily);
-    text.textContent = textItem.str;
-    svg.appendChild(text);
-  });
-  return svg;
-}
+const getPDF = file => PDFJs.getDocument(file).promise
 
-function pageLoaded() {
-  // Loading document and page text content
-  var loadingTask = getPDF(pdf);
-  loadingTask.then(function (pdfDocument) {
-    console.log('AAAAAAAAA', pdfDocument)
-    pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
-      var viewport = page.getViewport({ scale: PAGE_SCALE })
-      page.getTextContent().then(function (textContent) {
-        // building SVG and adding that to the DOM
-        var svg = buildSVG(viewport, textContent)
-        document.body.appendChild(svg)
-      })
-    })
-  })
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  pageLoaded();
-});
-
-const makePdf = async (name, pdf): Promise<PDF> => ({
+const makePdf = async ({ name, pdf, arrayBuffer, simpleDisplay }: Partial<PDF>): Promise<PDF> => ({
+  simpleDisplay,
+  arrayBuffer,
   pdf,
   name,
   pages:
@@ -68,36 +22,18 @@ const makePdf = async (name, pdf): Promise<PDF> => ({
         new Array(pdf.numPages)
           .fill(undefined)
           .map((_, i) => pdf.getPage(i + 1))
-      )).map(async page => ({
-        page,
-        number: page.pageNumber,
-        lines:
-          (await page.getTextContent())
-            .items
-            // .filter(({ fontName }) =>
-            //   fontName !== 'g_d0_f12'
-            //   && fontName !== 'g_d0_f13'
-            //   && fontName !== 'g_d0_f14'
-            //   && fontName !== 'g_d0_f15'
-            //   && fontName !== 'g_d0_f16'
-            //   && fontName !== 'g_d0_f19'
-            // )
-      }))
+      )).map(async page => {
+        const textContent = await page.getTextContent()
+        
+        return {
+          page,
+          number: page.pageNumber,
+          textContent,
+          lines: textContent.items
+        }
+      })
     )
 })
-
-// fetch(pdf)
-//   .then(res => res.arrayBuffer())
-//   .then(arrayBuffer => getPDF(arrayBuffer))
-//   .then(async pdf => {
-//     console.log(pdf)
-//     // const page = await pdf.getPage(4)
-//     // const { items } = await page.getTextContent()
-//     // console.log(items)
-//     // console.log(items.map(({ str }: { str: string }) => str).join('|'))
-//     const pd = await makePdf(pdf)
-//     console.log(pd)
-//   })
 
 interface Line {
   str: string
@@ -108,114 +44,139 @@ interface Page {
   page: any
   number: number
   lines: Line[]
+  textContent: any
 }
 
 interface PDF {
+  arrayBuffer: ArrayBuffer
   pdf: any
   name: string
   pages: Page[]
+  simpleDisplay: boolean
 }
 
-
+const dedupeFiles = arr =>
+  [
+    ...new Map(
+      arr.map(({ name, arrayBuffer }) => [name, { arrayBuffer, name }])
+    ).entries()
+  ].map(([_, file]) => file)
 
 export default () => {
   const [files, setFiles] = useState<PDF[]>([])
+  const [filesHistory, setFilesHistory] = useState<PDF[]>([])
   const [isHover, setIsHover] = useState(false)
-  const canvasRef = useRef()
-  console.log(files)
+
   useEffect(() => {
-    files.map(async (file) => {
-      console.log(file)
-
-      file
-        .pdf
-        .getPage(12)
-        .then(page => {
-          console.log('Page loaded')
-          
-          const scale = 1.5
-          const viewport = page.getViewport({ scale: scale })
-
-          // Prepare canvas using PDF page dimensions
-          const canvas = canvasRef.current
-          const context = canvas.getContext('2d')
-          canvas.height = viewport.height
-          canvas.width = viewport.width
-
-          // Render PDF page into canvas context
-          const renderContext = { canvasContext: context, viewport: viewport }
-          const renderTask = page.render(renderContext)
-          renderTask.promise.then(() => {
-            tesseract.recognize(
-              canvas.toDataURL(),
-              'eng',
-              { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-              console.log(text)
+    (async () => {
+      setFilesHistory(
+        await Promise.all(
+          (await get('files'))?.map(async ({ name, arrayBuffer }) => {
+            return makePdf({
+              simpleDisplay: true,
+              name,
+              pdf: await getPDF(arrayBuffer),
+              arrayBuffer: arrayBuffer
             })
           })
-        })
+        )
+      )
+    })()
+  }, [])
 
-      // fetch(
-      //   'http://localhost:5001/extractify-10ca0/us-central1/widgets/extract',
-      //   {
-      //     method: 'POST',
-      //     body: file,
-      //     mode: 'cors'
-      //   }
-      // )
-      //   .then(res => res.json())
-      //   .then(res => console.log('RES:', res))
-    })
-  }, [files.map(({ name }) => name).join('|')])
+  useEffect(() => {
+    if (!files.length) return
+    set(
+      'files',
+      dedupeFiles([...filesHistory, ...files])
+    )
+    void (async () => {
+      setFilesHistory(
+        await Promise.all(
+          dedupeFiles([...filesHistory, ...files])
+            .map(async ({ name, arrayBuffer }) => {
+              return makePdf({
+                simpleDisplay: true,
+                name,
+                pdf: await getPDF(arrayBuffer),
+                arrayBuffer: arrayBuffer
+              })
+            })
+        )
+      )
+    })()
+  }, [files.map(({ name }) => name).join(' ')])
 
   return (
-    <div className="home">
+    <div
+      className={`home ${isHover ? 'drag-hover' : ''}`}
+      onDragOver={() => setIsHover(true)}
+    >
       <div
-        className={`drop-zone ${isHover ? 'drag-hover' : ''}`}
-        onDragLeave={() => setIsHover(false)}
-        onDragOver={() => setIsHover(true)}
+        className="drop-zone"
         onDrop={() => setIsHover(false)}
       >
-        <span>Drag or click PDF file(s)</span>
+        <span>You can now drop your file here :)</span>
         <Download size="10rem"/>
         <input
+          onDragLeave={() => setIsHover(false)}
           type="file"
           multiple={true}
           onChange={async ev =>
             setFiles(
               await Promise.all(
                 [...(ev.target as HTMLInputElement).files]
-                  .map(async file =>
-                    makePdf(file.name, await getPDF(await file.arrayBuffer()))
-                  )
+                  .map(async file => {
+                    const arrayBuffer = await file.arrayBuffer()
+                    return makePdf({
+                      simpleDisplay: true,
+                      name: file.name,
+                      pdf: await getPDF(arrayBuffer),
+                      arrayBuffer: arrayBuffer
+                    })
+                  })
               )
             )
           }
         />
       </div>
-      <canvas ref={canvasRef}></canvas>
-      <div className="pdf-text">
+      <div className="history">
+        <h3>PDF history</h3>
+        <button
+          onClick={() => {
+            set('files', [])
+            setFilesHistory([])
+          }}
+        >
+          clear history
+        </button>
         {
-          files.map(({ name, pages }) =>
-            <div>
-              <h1>{name}</h1>
-              {
-                pages.map(({ number, lines }) =>
-                  <div>
-                    <h2>Page {number}</h2>
-                    {
-                      lines.map(({ fontName, str }) =>
-                        fontName === 'g_d0_f2'
-                          ? <h3>{str}</h3>
-                          : <span>{str}</span>
-                      )
-                    }
-                  </div>
+          filesHistory.map(({ name, arrayBuffer }: Pick<PDF, 'name' | 'arrayBuffer'>) =>
+            <div
+              className="item"
+              onClick={async () =>
+                setFiles(
+                  [
+                    await makePdf({
+                      simpleDisplay: true,
+                      name,
+                      pdf: await getPDF(arrayBuffer),
+                      arrayBuffer: arrayBuffer
+                    })
+                  ]
                 )
               }
+            >
+              {name}
             </div>
           )
+        }
+      </div>
+      <div>
+        {
+          files.length
+            ? files.map(pdf => <PDFViewer pdf={pdf}/>)
+            : <div>To start using the app, you can drag and drop PDF files !</div>
         }
       </div>
     </div>

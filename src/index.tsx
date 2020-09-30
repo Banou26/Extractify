@@ -1,10 +1,10 @@
 /** @jsx h */
 import { h, render } from 'preact'
 
-import Router from './router'
+import Home from './components/home'
 
 render(
-  <Router/>,
+  <Home/>,
   document.body.appendChild(
     document.createElement('div')
   )

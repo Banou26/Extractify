@@ -8,11 +8,9 @@
     "sass": "^1.26.11"
   },
   "dependencies": {
-    "laco": "^1.2.1",
-    "laco-react": "^1.1.0",
+    "idb-keyval": "^3.2.0",
     "pdfjs-dist": "^2.5.207",
     "preact": "^10.5.2",
-    "raviger": "^1.4.5",
     "react-feather": "^2.0.8",
     "tesseract.js": "^2.1.3"
   },
