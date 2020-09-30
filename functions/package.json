@@ -3,15 +3,15 @@
   "scripts": {
     "lint": "eslint 'src/**/*'",
     "build": "tsc",
-    "serve": "npm run build && firebase emulators:start --only functions",
+    "serve": "npm run build && firebase emulators:start",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "firebase deploy",
     "logs": "firebase functions:log",
-    "dev": "concurrently \"tsc --watch\" \"firebase emulators:start --only functions\""
+    "dev": "concurrently \"tsc --watch\" \"firebase emulators:start\""
   },
   "engines": {
-    "node": "14"
+    "node": "12"
   },
   "main": "lib/index.js",
   "dependencies": {
@@ -20,9 +20,7 @@
     "express": "^4.17.1",
     "firebase-admin": "^8.10.0",
     "firebase-functions": "^3.6.1",
-    "pdfjs-dist": "^2.5.207",
-    "playwright": "^1.4.2",
-    "puppeteer": "^5.3.1"
+    "pdfjs-dist": "^2.5.207"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",
