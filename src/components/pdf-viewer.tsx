@@ -1,65 +1,8 @@
 /** @jsx h */
 import { Fragment, h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { Util } from 'pdfjs-dist'
-import * as tesseract from 'tesseract.js'
 
-const SVG_NS = 'http://www.w3.org/2000/svg'
-
-const buildSVG = (viewport, textContent) => {
-  const svg = document.createElementNS(SVG_NS, 'svg:svg')
-  svg.setAttribute('width', viewport.width + 'px')
-  svg.setAttribute('height', viewport.height + 'px')
-  svg.setAttribute('font-size', '1')
-  svg.setAttribute('overflow', 'visible')
-
-  textContent.items.forEach(function (textItem) {
-    const tx = Util.transform(
-      Util.transform(viewport.transform, textItem.transform),
-      [1, 0, 0, -1, 0, 0]
-    )
-    const style = textContent.styles[textItem.fontName]
-    const text = document.createElementNS(SVG_NS, 'svg:text')
-    text.setAttribute('transform', `matrix(${tx.join(' ')})`)
-    text.setAttribute('font-family', style.fontFamily)
-    text.setAttribute('fill', 'white')
-    text.textContent = textItem.str
-    svg.appendChild(text)
-  })
-  return svg
-}
-
-const getTextFromPage = ({ pdf, pageNumber, logger }) =>
-  pdf
-    .getPage(pageNumber)
-    .then(page => {
-      const viewport = page.getViewport({ scale: 1.5 })
-
-      const canvas = document.createElement('canvas')
-      document.body.appendChild(canvas)
-      const context = canvas.getContext('2d')
-      canvas.height = viewport.height
-      canvas.width = viewport.width
-
-      const renderContext = { canvasContext: context, viewport: viewport }
-      const renderTask = page.render(renderContext)
-      return (
-        renderTask
-          .promise
-          .then(() =>
-            tesseract
-              .recognize(
-                canvas.toDataURL(),
-                'eng',
-                { logger }
-              )
-              .then(({ data: { text } }) => {
-                canvas.remove()
-                return text
-              })
-          )
-      )
-    })
+import { buildSVG, getTextFromPage } from '../utils'
 
 export const PageRenderer = ({ pdf, page: { page, textContent, number, lines }, display }: { page: Page, display: boolean }) => {
   const ref = useRef(null)

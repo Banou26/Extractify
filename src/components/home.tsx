@@ -4,56 +4,37 @@ import { useEffect, useState } from 'preact/hooks'
 import { Download } from 'react-feather'
 import * as PDFJs from 'pdfjs-dist'
 import { set, get } from 'idb-keyval'
+// import pdf from 'url:../pdf.pdf'
 
 import PDFViewer from './pdf-viewer'
+import { PDF } from '../types'
+import { getPDF, makePdf } from '../utils'
 
-PDFJs.GlobalWorkerOptions.workerSrc = 'http://localhost:1234/pdfjs-build/pdf.worker.js'
+PDFJs.GlobalWorkerOptions.workerSrc = `${location.origin}/pdfjs-build/pdf.worker.js`
 
-const getPDF = file => PDFJs.getDocument(file).promise
+// fetch(pdf)
+//   .then(res => res.blob())
+//   .then(blob =>
+//     fetch('http://localhost:5001/extractify-10ca0/us-central1/widgets/extract', {
+//       method: 'POST',
+//       body: blob,
+//       mode: 'cors'
+//     })
+//   )
+//   .then(res => res.json())
+//   .then(json => console.log(json))
 
-const makePdf = async ({ name, pdf, arrayBuffer, simpleDisplay }: Partial<PDF>): Promise<PDF> => ({
-  simpleDisplay,
-  arrayBuffer,
-  pdf,
-  name,
-  pages:
-    await Promise.all(
-      (await Promise.all(
-        new Array(pdf.numPages)
-          .fill(undefined)
-          .map((_, i) => pdf.getPage(i + 1))
-      )).map(async page => {
-        const textContent = await page.getTextContent()
-        
-        return {
-          page,
-          number: page.pageNumber,
-          textContent,
-          lines: textContent.items
-        }
-      })
-    )
-})
-
-interface Line {
-  str: string
-  fontName: string
-}
-
-interface Page {
-  page: any
-  number: number
-  lines: Line[]
-  textContent: any
-}
-
-interface PDF {
-  arrayBuffer: ArrayBuffer
-  pdf: any
-  name: string
-  pages: Page[]
-  simpleDisplay: boolean
-}
+// fetch(pdf)
+//   .then(res => res.blob())
+//   .then(blob =>
+//     fetch('http://localhost:5001/extractify-10ca0/us-central1/widgets/repair/2', {
+//       method: 'POST',
+//       body: blob,
+//       mode: 'cors'
+//     })
+//   )
+//   .then(res => res.arrayBuffer())
+//   .then(v => console.log(URL.createObjectURL(new Blob([v], { type: 'image/png' }))))
 
 const dedupeFiles = arr =>
   [
@@ -73,7 +54,6 @@ export default () => {
         await Promise.all(
           (await get('files'))?.map(async ({ name, arrayBuffer }) => {
             return makePdf({
-              simpleDisplay: true,
               name,
               pdf: await getPDF(arrayBuffer),
               arrayBuffer: arrayBuffer
@@ -96,7 +76,6 @@ export default () => {
           dedupeFiles([...filesHistory, ...files])
             .map(async ({ name, arrayBuffer }) => {
               return makePdf({
-                simpleDisplay: true,
                 name,
                 pdf: await getPDF(arrayBuffer),
                 arrayBuffer: arrayBuffer
@@ -129,7 +108,6 @@ export default () => {
                   .map(async file => {
                     const arrayBuffer = await file.arrayBuffer()
                     return makePdf({
-                      simpleDisplay: true,
                       name: file.name,
                       pdf: await getPDF(arrayBuffer),
                       arrayBuffer: arrayBuffer
@@ -158,7 +136,6 @@ export default () => {
                 setFiles(
                   [
                     await makePdf({
-                      simpleDisplay: true,
                       name,
                       pdf: await getPDF(arrayBuffer),
                       arrayBuffer: arrayBuffer
