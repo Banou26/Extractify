@@ -1,10 +1,13 @@
 /** @jsx h */
-import { h, render } from 'preact'
+import { Fragment, h, render } from 'preact'
 
+import DropZone from './components/drop-zone'
 import Home from './components/home'
 
 render(
-  <Home/>,
+  <DropZone>
+    <Home/>
+  </DropZone>,
   document.body.appendChild(
     document.createElement('div')
   )

@@ -5,7 +5,7 @@ import './api/extract'
 import './api/repair'
 import './api/image'
 
-exports.widgets =
+exports.api =
   functions
     .runWith({ timeoutSeconds: 540 })
     .https

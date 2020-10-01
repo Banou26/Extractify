@@ -4,6 +4,7 @@
   "main": "dist/index.html",
   "license": "MIT",
   "devDependencies": {
+    "@types/pdfjs-dist": "^2.1.5",
     "parcel": "^2.0.0-nightly.409",
     "sass": "^1.26.11"
   },

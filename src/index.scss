@@ -54,6 +54,53 @@ h1 {
   background-color: rgba(24, 24, 24, 0.5);
 }
 
+.drag-zone {
+  height: 100%;
+  width: 100%;
+
+  .content {
+    height: 100%;
+    width: 100%;
+  }
+
+  .drop-zone {
+    display: none;
+  }
+
+  &.hover .drop-zone {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    background-color: rgb(77, 77, 77, 0.5);
+
+    &:active, &.drag-hover {
+      transition: background-color ease-out 200ms;
+      background-color: rgb(77, 77, 77);
+    }
+
+    input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      height: 100%;
+      width: 100%;
+
+      opacity: 0;
+      border-radius: inherit;
+      cursor: pointer;
+    }
+  }
+}
+
 .home {
   height: 100%;
   width: 100%;
@@ -97,45 +144,6 @@ h1 {
 
       .pdf-page {
         margin: 2rem;
-      }
-    }
-  }
-
-  .drop-zone {
-    display: none;
-  }
-
-  &.drag-hover {
-    .drop-zone {
-      position: absolute;
-      height: 100%;
-      width: 100%;
-  
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-
-      background-color: rgb(77, 77, 77, 0.5);
-  
-      &:active, &.drag-hover {
-        transition: background-color ease-out 200ms;
-        background-color: rgb(77, 77, 77);
-      }
-  
-      input {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-  
-        height: 100%;
-        width: 100%;
-  
-        opacity: 0;
-        border-radius: inherit;
-        cursor: pointer;
       }
     }
   }

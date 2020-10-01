@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 
 import { buildSVG, getTextFromPage } from '../utils'
 
+enum Display {
+  SIMPLE = 'SIMPLE',
+  COMPLEX = 'COMPLEX'
+}
+
 export const PageRenderer = ({ pdf, page: { page, textContent, number, lines }, display }: { page: Page, display: boolean }) => {
   const ref = useRef(null)
   const [ocrProgress, setOCRProgress] = useState(0)
@@ -63,17 +68,22 @@ export const PageRenderer = ({ pdf, page: { page, textContent, number, lines }, 
 }
 
 export default ({ pdf: { pdf, name, pages } }: { pdf: PDF }) => {
-  const [display, setDisplay] = useState(false)
+  const [display, setDisplay] = useState<Display>(Display.COMPLEX)
   return (
     <div className="pdf-wrapper">
       <h2>{name}</h2>
-      <button onClick={() => setDisplay(!display)} >
+      <button onClick={() => setDisplay(!display)}>
         Switch to {display ? 'detailed' : 'simple'} display
       </button>
       <div className="pdf-view">
         {
           pages.map(page =>
-            <PageRenderer key={`${name}-${page.number}`} page={page} pdf={pdf} display={display}/>
+            <PageRenderer
+              key={`${name}-${page.number}`}
+              page={page}
+              pdf={pdf}
+              display={display}
+            />
           )
         }
       </div>
