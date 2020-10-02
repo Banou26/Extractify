@@ -101,28 +101,28 @@ h1 {
   }
 }
 
+.history {
+  display: flex;
+
+  margin: 10rem;
+  margin-bottom: 0;
+
+  box-sizing: border-box;
+  width: calc(100% - 20rem);
+
+  padding: 1rem;
+  border-radius: 2rem;
+  background-color: rgb(41, 41, 41);
+
+  .item {
+    margin: 1rem;
+  }
+}
+
 .home {
   height: 100%;
   width: 100%;
   overflow: auto;
-
-  .history {
-    display: flex;
-
-    margin: 10rem;
-    margin-bottom: 0;
-
-    box-sizing: border-box;
-    width: calc(100% - 20rem);
-
-    padding: 1rem;
-    border-radius: 2rem;
-    background-color: rgb(41, 41, 41);
-
-    .item {
-      margin: 1rem;
-    }
-  }
 
   .pdf-wrapper {
     width: calc(100% - 10rem);

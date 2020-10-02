@@ -2,24 +2,20 @@
 import { h } from 'preact'
 import { useState } from 'preact/hooks'
 import { Download } from 'react-feather'
+import { importPDF } from '../store/pdf'
 
 export default ({ children }) => {
   const [isHover, setIsHover] = useState(false)
 
-  const onDrop = async ev =>
-    setFiles(
-      await Promise.all(
-        [...(ev.target as HTMLInputElement).files]
-          .map(async file => {
-            const arrayBuffer = await file.arrayBuffer()
-            return makePdf({
-              name: file.name,
-              pdf: await getPDF(arrayBuffer),
-              arrayBuffer: arrayBuffer
-            })
-          })
+  const onDrop = ev =>
+    [...(ev.target as HTMLInputElement).files]
+      .forEach(file =>
+        file
+          .arrayBuffer()
+          .then(arrayBuffer =>
+            importPDF({ name: file.name, arrayBuffer })
+          )
       )
-    )
 
   return (
     <div
@@ -30,11 +26,12 @@ export default ({ children }) => {
         className="drop-zone"
         onDrop={() => setIsHover(false)}
       >
-        <span>You can now drop your file here :)</span>
+        <span>You can now drop your file :)</span>
         <Download size="10rem"/>
         <input
           onDragLeave={() => setIsHover(false)}
           type="file"
+          accept="application/pdf"
           multiple={true}
           onChange={onDrop}
         />
