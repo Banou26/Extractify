@@ -3,6 +3,10 @@ import type { PDFDocumentProxy, PDFPageProxy, PDFPromise } from 'pdfjs-dist'
 import { getDocument as _getDocument } from 'pdfjs-dist/es5/build/pdf.js'
 import { createCanvas } from 'canvas'
 
+import { setStubs } from './domstubs'
+
+setStubs(global)
+
 export const wrapPDFPromise = <T = any>(pdfPromise: PDFPromise<T>): Promise<T> =>
   new Promise((resolve, reject) => pdfPromise.then(resolve, reject))
 
@@ -15,7 +19,7 @@ export const getAllPages = (pdf: PDFDocumentProxy) =>
   Promise.all(
     new Array(pdf.numPages)
       .fill(undefined)
-      .map(async (_, i) => pdf.getPage(i + 1))
+      .map((_, i) => wrapPDFPromise(pdf.getPage(i + 1)))
   )
 
 export const getPageImage = (page: PDFPageProxy): Promise<Buffer> =>

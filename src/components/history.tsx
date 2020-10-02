@@ -2,7 +2,7 @@
 import { h } from 'preact'
 import { useStore } from 'laco-react'
 
-import store from '../store'
+import store, { clearHistory, selectSavedPDF } from '../store'
 import { PDF } from '../utils'
 
 export default () => {
@@ -11,31 +11,17 @@ export default () => {
   return (
     <div className="history">
       <h3>PDF history</h3>
-      <button
-        // onClick={() => {
-        //   set('files', [])
-        //   setFilesHistory([])
-        // }}
-      >
+      <button onClick={() => clearHistory()}>
         clear history
       </button>
       {
-        history.map(({ name, thumbnail, arrayBuffer }: Pick<PDF, 'name' | 'thumbnail' | 'arrayBuffer'>) =>
+        history.map((pdf) =>
           <div
             className="item"
-            onClick={async () => {}
-              // setFiles(
-              //   [
-              //     await makePdf({
-              //       name,
-              //       pdf: await getPDF(arrayBuffer),
-              //       arrayBuffer: arrayBuffer
-              //     })
-              //   ]
-              // )
-            }
+            onClick={async () => selectSavedPDF(pdf)}
           >
-            {name}
+            <img src={pdf.thumbnail} className="thumbnail"/>
+            {pdf.name}
           </div>
         )
       }

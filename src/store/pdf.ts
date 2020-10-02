@@ -6,8 +6,21 @@ import store from './index'
 import { getArrayBufferHash, getPDFThumbnailUrl, getPDF } from '../utils'
 import { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist'
 
-export const decrement = () =>
-  store.set(state => ({ count: state.count - 1 }))
+export const clearHistory = () =>
+  set('history', [])
+    .then(() =>
+      store.set(state => ({
+        ...state,
+        history: []
+      }))
+    )
+  
+
+export const selectSavedPDF = (pdf: PDF) =>
+  store.set(state => ({
+    ...state,
+    pdfs: [pdf]
+  }))
 
 export const importPDF =
   async (
@@ -57,13 +70,19 @@ export const importPDF =
               })
           )
     }
+
     store.set(state => {
+      const history = [...state.history, pdf]
+      set('history', [
+        ...history.map(({ name, arrayBuffer }) => ({
+            name,
+            arrayBuffer
+          })),
+        { pdf: state.pdf, arrayBuffer: state.arrayBuffer }
+      ])
       return {
         ...state,
-        history: [
-          ...state.history,
-          pdf
-        ],
+        history,
         pdfs: [
           ...state.pdfs,
           pdf
@@ -72,19 +91,9 @@ export const importPDF =
     })
   }
 
-// get('files')
-//   .then((pdfs: PDF[]) =>
-//     pdfs.forEach(({ arrayBuffer }) =>
-//       importPDF(arrayBuffer)
-//     )
-//   )
-
-// await Promise.all(
-//   (await get('files'))?.map(async ({ name, arrayBuffer }) => {
-//     return makePdf({
-//       name,
-//       pdf: await getPDF(arrayBuffer),
-//       arrayBuffer: arrayBuffer
-//     })
-//   })
-// )
+get('history')
+  .then((pdfs: PDF[]) =>
+    pdfs?.forEach(({ name, arrayBuffer }) =>
+      importPDF({ name, arrayBuffer })
+    )
+  )

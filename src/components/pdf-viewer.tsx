@@ -18,39 +18,44 @@ export const PageRenderer =
     const ref = useRef(null)
     const [ocrProgress, setOCRProgress] = useState(0)
     const [ocrStr, setOCRStr] = useState(null)
-    console.log('page-renderer', textContent, number, display)
+
     useEffect(() => {
       if (!ref.current) return
-      if (display) {
-        ref.current.children[0].remove()
+      if (display === Display.SIMPLE) {
+        ref.current?.children[0]?.remove()
       } else {
-        page(number).then(page => {
-          ref.current.appendChild(
-            buildSVG(
-              page.getViewport({ scale: 2.75 }),
-              textContent
+        page(number)
+          .then(async page => {
+            const svg =
+              await buildSVG(
+                page.getViewport({ scale: 2.75 }),
+                textContent
+              )
+            ref.current.appendChild(
+              svg
             )
-          )
-        })
+          })
       }
     }, [ref, display])
-    console.log(textContent.items)
+
     return (
       <Fragment>
         <button
           disabled={!!ocrProgress}
-          onClick={() => {
-            getOCRText(arrayBuffer, number).then(v => setOCRStr(v))
-          }}
+          onClick={() =>
+            getOCRText(arrayBuffer, number)
+              .then(v => setOCRStr(v))
+          }
         >
           repair{!!ocrProgress ? 'ing' : ''} page {!!ocrProgress ? `(${Math.round(ocrProgress * 100)}%)` : ''}
         </button>
         <div>
+        <h2>{number}</h2>
           {
             ocrStr
               ? ocrStr
               : (
-                display
+                display === Display.SIMPLE
                   ? (
                     <div className="pdf-page">
                       {
@@ -76,17 +81,33 @@ export default ({ pdf: { arrayBuffer, name, textContent, ocr, pdf, page } }: { p
   return (
     <div className="pdf-wrapper">
       <h2>{name}</h2>
-      <button onClick={() => setDisplay(!display)}>
-        Switch to {display ? 'detailed' : 'simple'} display
+      <button
+        onClick={() =>
+          setDisplay(
+            display === Display.SIMPLE
+              ? Display.COMPLEX
+              : Display.SIMPLE
+          )
+        }
+      >
+        Switch to
+        &nbsp;
+        {
+          display === Display.COMPLEX
+            ? 'detailed'
+            : 'simple'
+        }
+        &nbsp;
+        display
       </button>
       <div className="pdf-view">
         {
           textContent.map((textContent, i) =>
             <PageRenderer
-              key={`${name}-${i}`}
+              key={`${name}-${i + 1}`}
               textContent={textContent}
               arrayBuffer={arrayBuffer}
-              number={i}
+              number={i + 1}
               ocr={ocr}
               pdf={pdf}
               page={page}
