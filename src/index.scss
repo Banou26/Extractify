@@ -77,11 +77,11 @@ h1 {
     align-items: center;
     justify-content: center;
 
-    background-color: rgb(77, 77, 77, 0.5);
+    background-color: rgba(42, 42, 42, 0.69);
 
     &:active, &.drag-hover {
       transition: background-color ease-out 200ms;
-      background-color: rgb(77, 77, 77);
+      background-color: rgb(42, 42, 42);
     }
 
     input {
@@ -101,28 +101,44 @@ h1 {
   }
 }
 
-.history {
-  display: flex;
-
-  margin: 10rem;
-  margin-bottom: 0;
-
-  box-sizing: border-box;
-  width: calc(100% - 20rem);
-
-  padding: 1rem;
-  border-radius: 2rem;
-  background-color: rgb(41, 41, 41);
-
-  .item {
-    margin: 1rem;
-  }
-}
-
 .home {
   height: 100%;
   width: 100%;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .history {
+    display: flex;
+  
+    margin: 10rem;
+    margin-bottom: 0;
+  
+    box-sizing: border-box;
+    width: calc(100% - 20rem);
+  
+    padding: 1rem;
+    border-radius: 2rem;
+    background-color: rgb(41, 41, 41);
+  
+    .item {
+      margin: 1rem;
+    }
+  }
+
+  .description {
+    background-color: rgb(41, 41, 41);
+    border-radius: 2rem;
+    padding: 2.5rem;
+    text-align: center;
+    margin: auto;
+    margin-top: 2.5rem;
+    input {
+      padding: 2.5rem;
+    }
+  }
 
   .pdf-wrapper {
     width: calc(100% - 10rem);

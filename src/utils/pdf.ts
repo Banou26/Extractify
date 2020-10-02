@@ -1,11 +1,22 @@
-import type { PDFDocumentProxy, PDFPageProxy, PDFPromise } from 'pdfjs-dist'
+import type { PDFDocumentProxy, PDFPageProxy, PDFPromise, TextContent } from 'pdfjs-dist'
+import { getPageImage } from './image'
 
 export interface PDF {
   hash: string
   thumbnail: string
   arrayBuffer: ArrayBuffer
-  pdf: PDFDocumentProxy
+  name: string
+  textContent: TextContent[]
+  ocr: (number: number) => Promise<string>,
+  pdf: () => Promise<PDFDocumentProxy>,
+  page: (pageNumber: number) => Promise<PDFPageProxy>
 }
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+export const wrapPDFPromise =
+  <T = any>(pdfPromise: PDFPromise<T>): Promise<T> =>
+    new Promise((resolve, reject) => pdfPromise.then(resolve, reject))
 
 export const importPdf = () =>
   import('pdfjs-dist')
@@ -14,19 +25,62 @@ export const importPdf = () =>
       return PDFJs
     })
 
-const SVG_NS = 'http://www.w3.org/2000/svg'
+export const getPDF = (file: ArrayBuffer) =>
+  importPdf()
+    .then(({ getDocument }) =>
+      wrapPDFPromise(getDocument(file).promise)
+    )
 
-export const wrapPDFPromise =
-  <T = any>(pdfPromise: PDFPromise<T>): Promise<T> =>
-    new Promise((resolve, reject) => pdfPromise.then(resolve, reject))
+export const getAllPages = (pdf: PDFDocumentProxy) =>
+  Promise.all(
+    new Array(pdf.numPages)
+      .fill(undefined)
+      .map(async (_, i) => pdf.getPage(i + 1))
+  )
 
-export const OCRImage = (arrayBuffer: ArrayBuffer, { logger }) =>
-  import('tesseract.js')
-    .then(({ recognize }) => recognize(arrayBuffer, 'eng', { logger }))
-    .then(({ data: { text } }) => text)
+export const getApiPDFTextContent =
+  (arrayBuffer: ArrayBuffer) =>
+    fetch(
+      `${process.env.API_URL}/extract`,
+      {
+        method: 'POST',
+        body: new Blob([arrayBuffer], { type: 'application/pdf'}),
+        mode: 'cors'
+      }
+    ).then(res => res.json())
+
+export const getApiPDFOCRText =
+  (arrayBuffer: ArrayBuffer, page = 1) =>
+    fetch(
+      `${process.env.API_URL}/repair/${page}`,
+      {
+        method: 'POST',
+        body: new Blob([arrayBuffer], { type: 'application/pdf'}),
+        mode: 'cors'
+      }
+    ).then(res => res.text())
+
+export const OCRImage =
+  (arrayBuffer: ArrayBuffer, { logger } = { logger: () => {} }) =>
+    import('tesseract.js')
+      .then(({ recognize }) => recognize(arrayBuffer, 'eng', { logger }))
+      .then(({ data: { text } }) => text)
+
+export const getOCRText = (arrayBuffer: ArrayBuffer, page: number) =>
+  Promise.race([
+    getApiPDFOCRText(arrayBuffer, page),
+    // todo: replace this with an util function
+    getPDF(arrayBuffer)
+      .then(pdf => wrapPDFPromise(pdf.getPage(page)))
+      .then(getPageImage)
+      .then(imageArrayBuffer => OCRImage(imageArrayBuffer))
+  ])
+
+export const getPDFTextContent = (page: PDFPageProxy) =>
+  wrapPDFPromise(page.getTextContent())
 
 export const pageText = (page: PDFPageProxy) =>
-  wrapPDFPromise(page.getTextContent())
+  getPDFTextContent(page)
     .then(textContent =>
       textContent
         .items
@@ -34,7 +88,21 @@ export const pageText = (page: PDFPageProxy) =>
         .join(' ')
     )
 
-export const buildSVG = async (viewport, textContent) => {
+export const getPageTextContent = (arrayBuffer: ArrayBuffer) =>
+  Promise.race([
+    getApiPDFTextContent(arrayBuffer),
+    getPDF(arrayBuffer)
+      .then(getAllPages)
+      .then(pages =>
+        Promise.all(
+          pages.map(page =>
+            wrapPDFPromise(page.getTextContent())
+          )
+        )
+      )
+  ])
+
+export const buildSVG = async (viewport, textContent: TextContent) => {
   const { Util } = await importPdf()
   const svg = document.createElementNS(SVG_NS, 'svg:svg')
   svg.setAttribute('width', viewport.width + 'px')
@@ -57,9 +125,3 @@ export const buildSVG = async (viewport, textContent) => {
   })
   return svg
 }
-
-export const getPDF = (file: ArrayBuffer) =>
-  importPdf()
-    .then(({ getDocument }) =>
-      wrapPDFPromise(getDocument(file).promise)
-    )

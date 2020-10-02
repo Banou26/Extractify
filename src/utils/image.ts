@@ -1,5 +1,5 @@
 import type { PDFPageProxy } from 'pdfjs-dist'
-import type { PDF } from './pdf'
+import { getPDF, PDF } from './pdf'
 
 import { wrapPDFPromise } from '../utils'
 import { getArrayBufferHash } from './hash'
@@ -43,21 +43,22 @@ export const getPageImage =
     )
   }
 
-export const getPdfThumbnail = ({ arrayBuffer, pdf }: Pick<PDF, 'arrayBuffer' | 'pdf'>) =>
+export const getPdfThumbnail = (arrayBuffer: ArrayBuffer) =>
   Promise.race([
     getApiPDFImage(arrayBuffer),
-    wrapPDFPromise(pdf.getPage(1))
+    getPDF(arrayBuffer)
+      .then(pdf => wrapPDFPromise(pdf.getPage(1)))
       .then(getPageImage)
   ])
 
 export const getPDFThumbnailUrl =
-  (pdf: Pick<PDF, 'arrayBuffer' | 'pdf'>) =>
-    getArrayBufferHash(pdf.arrayBuffer)
+  (arrayBuffer: ArrayBuffer) =>
+    getArrayBufferHash(arrayBuffer)
       .then(hash =>
         thumbnailCache.has(hash)
           ? thumbnailCache.get(hash)
           : (
-            getPdfThumbnail(pdf)
+            getPdfThumbnail(arrayBuffer)
               .then(arrayBuffer => {
                 thumbnailCache.set(hash, arrayBuffer)
                 return URL.createObjectURL(

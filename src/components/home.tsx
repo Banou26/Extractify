@@ -6,6 +6,8 @@ import store from '../store'
 import PDFViewer from './pdf-viewer'
 import { importPDF } from '../store/pdf'
 
+import History from './history'
+
 export default () => {
   const { pdfs } = useStore(store)
 
@@ -21,9 +23,23 @@ export default () => {
 
   return (
     <div className="home">
+      <History/>
       <div>
+        {
+          pdfs.length
+            ? (
+              pdfs.map(pdf =>
+                <PDFViewer pdf={pdf}/>
+              )
+            )
+            : undefined
+        }
+      </div>
+      <div className="description">
         <p>
-          To start using the app, you can drag and drop PDF files<br/>or you can use this file input instead :)
+          To start using the app, you can drag and drop PDF files
+          <br/>
+          or you can use this file input instead :)
         </p>
         <input
           type="file"
@@ -31,16 +47,6 @@ export default () => {
           multiple={true}
           onChange={onDrop}
         />
-      </div>
-      <div>
-        {
-          pdfs.length || undefined
-          && (
-            pdfs.map(pdf =>
-              <PDFViewer pdf={pdf}/>
-            )
-          )
-        }
       </div>
     </div>
   )
