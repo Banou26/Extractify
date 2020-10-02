@@ -31,7 +31,7 @@ export const PageRenderer =
                 page.getViewport({ scale: 2.75 }),
                 textContent
               )
-            ref.current.appendChild(
+            ref.current?.appendChild(
               svg
             )
           })
